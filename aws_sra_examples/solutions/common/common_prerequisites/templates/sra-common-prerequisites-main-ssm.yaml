@@ -316,7 +316,8 @@ Resources:
             OrganizationalUnitIds:
               - !Ref pRootOrganizationalUnitId
           Regions:
-            - 'us-east-1'
+          # Use current region instead of 'us-east-1' that can be blocked by ControlTower
+            - !Ref AWS::Region
       TemplateURL: !Sub
         - https://${SRAStagingS3BucketName}.s3.${AWS::Region}.${AWS::URLSuffix}/${pSRASolutionName}/templates/sra-common-prerequisites-stackset-execution-role.yaml
         - SRAStagingS3BucketName: !Sub ${pSRAStagingS3BucketNamePrefix}-${AWS::AccountId}-${AWS::Region}

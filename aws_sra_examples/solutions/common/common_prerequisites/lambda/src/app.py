@@ -119,6 +119,9 @@ def delete_ssm_parameters(ssm_client: SSMClient, names: list) -> None:
 def get_customer_control_tower_regions() -> list:  # noqa: CCR001
     """Query 'AWSControlTowerBP-BASELINE-CLOUDWATCH' CloudFormation stack to identify customer regions.
 
+    Raises:
+        ValueError: 'AWSControlTowerBP-BASELINE-CLOUDWATCH' StackSet is not updated
+
     Returns:
         Customer regions chosen in Control Tower
     """
@@ -128,6 +131,10 @@ def get_customer_control_tower_regions() -> list:  # noqa: CCR001
     all_regions_identified = False
     for page in paginator.paginate(StackSetName="AWSControlTowerBP-BASELINE-CLOUDWATCH", PaginationConfig={"PageSize": CLOUDFORMATION_PAGE_SIZE}):
         for instance in page["Summaries"]:
+            # Check if StackSet is CURRENT. Sometimes StackSet is stuck in PENDING status and will not update actual regions from ControlTower
+            # We need at least one succeded account to identify customer regions
+            if instance["Status"] != "CURRENT" and instance["StackInstanceStatus"]["DetailedStatus"] != "SUCCEEDED":
+                continue
             if not aws_account:
                 aws_account = instance["Account"]
                 customer_regions.append(instance["Region"])
@@ -140,6 +147,10 @@ def get_customer_control_tower_regions() -> list:  # noqa: CCR001
         if all_regions_identified:
             break
         sleep(CLOUDFORMATION_THROTTLE_PERIOD)
+
+    # Raise an error to fix ControlTower provisioning first
+    if not aws_account:
+        raise ValueError("StackSet AWSControlTowerBP-BASELINE-CLOUDWATCH is not CURRENT. Please fix ControlTower provisionning")
 
     return customer_regions
 

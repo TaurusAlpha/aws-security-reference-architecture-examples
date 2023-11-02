@@ -178,31 +178,15 @@ def get_enabled_regions() -> list:  # noqa: CCR001
         Enabled regions
     """
     # available_regions = management_account_session.get_available_regions("sts") # noqa: E800
-    default_available_regions = [
-        "eu-central-1",
-        "ap-northeast-1",
-        "sa-east-1",
-        "ap-southeast-1",
-        "us-east-1",
-        "us-east-2",
-        "ca-central-1",
-        "us-west-2",
-        "us-west-1",
-        "ap-northeast-3",
-        "ap-northeast-2",
-        "ap-south-1",
-        "eu-west-2",
-        "eu-north-1",
-        "eu-west-1",
-        "ap-southeast-2",
-        "eu-west-3",
-    ]
-    LOGGER.info({"Default_Available_Regions": default_available_regions})
+    region_ssm_client: SSMClient = MANAGEMENT_ACCOUNT_SESSION.client("ssm", region_name=HOME_REGION, config=BOTO3_CONFIG)
+    ssm_regions_response = region_ssm_client.get_parameters_by_path(Path="/aws/service/global-infrastructure/services/controltower/regions")
+    available_regions = ([element["Value"] for element in ssm_regions_response["Parameters"]])
+    LOGGER.info({"Available_Regions": available_regions})
 
     enabled_regions = []
     disabled_regions = []
     region_session = boto3.Session()
-    for region in default_available_regions:
+    for region in available_regions:
         try:
             sts_client = region_session.client("sts", endpoint_url=f"https://sts.{region}.amazonaws.com", region_name=region, config=BOTO3_CONFIG)
             sts_client.get_caller_identity()

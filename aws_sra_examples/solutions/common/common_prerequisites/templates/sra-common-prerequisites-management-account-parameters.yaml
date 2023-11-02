@@ -288,6 +288,10 @@ Resources:
                 Effect: Allow
                 Action: ssm:GetParameters
                 Resource: !Sub arn:${AWS::Partition}:ssm:*:${AWS::AccountId}:parameter/sra/*
+              - Sid: SSMParameterGetByPath
+                Effect: Allow
+                Action: ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}::parameter/aws/service/global-infrastructure/services/controltower/regions
               - Sid: SSMParameterWrite
                 Effect: Allow
                 Action:
